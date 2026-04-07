@@ -4,7 +4,7 @@ import { studionet } from "genlayer-js/chains";
 const RPC_URL = import.meta.env.VITE_GENLAYER_RPC_URL || "https://studio.genlayer.com/api";
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "";
 
-export const client = createClient({
+export const readClient = createClient({
   chain: studionet,
   endpoint: RPC_URL,
 });
@@ -76,6 +76,7 @@ export function parseEvaluationList(raw: string): EvaluationRecord[] {
 }
 
 export async function submitEvaluation(
+  client: ReturnType<typeof createClient>,
   projectUrl: string,
   description: string,
   whitepaperText: string
@@ -91,18 +92,8 @@ export async function submitEvaluation(
   return String(receipt?.data ?? hash);
 }
 
-export async function getEvaluation(evalId: number): Promise<EvaluationRecord | null> {
-  const result = await client.readContract({
-    address: contractAddress,
-    functionName: "get_evaluation",
-    args: [evalId],
-  });
-  if (!result) return null;
-  return parseEvaluationRecord(result as string);
-}
-
 export async function getAllEvaluations(): Promise<EvaluationRecord[]> {
-  const result = await client.readContract({
+  const result = await readClient.readContract({
     address: contractAddress,
     functionName: "get_all_evaluations",
     args: [],
@@ -112,7 +103,7 @@ export async function getAllEvaluations(): Promise<EvaluationRecord[]> {
 }
 
 export async function getEvaluationCount(): Promise<number> {
-  const result = await client.readContract({
+  const result = await readClient.readContract({
     address: contractAddress,
     functionName: "get_evaluation_count",
     args: [],
@@ -124,12 +115,6 @@ export function getScoreColor(score: number): string {
   if (score >= 70) return "text-score-high";
   if (score >= 40) return "text-score-mid";
   return "text-score-low";
-}
-
-export function getScoreBgColor(score: number): string {
-  if (score >= 70) return "bg-score-high";
-  if (score >= 40) return "bg-score-mid";
-  return "bg-score-low";
 }
 
 export function getScoreLabel(score: number): string {

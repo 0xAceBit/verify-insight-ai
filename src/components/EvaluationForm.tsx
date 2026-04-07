@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Send } from "lucide-react";
 import { submitEvaluation } from "@/lib/genlayer";
 import { useToast } from "@/hooks/use-toast";
+import { useWallet } from "@/hooks/use-wallet";
 
 interface EvaluationFormProps {
   onSuccess: () => void;
@@ -19,9 +20,15 @@ export function EvaluationForm({ onSuccess }: EvaluationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [txStatus, setTxStatus] = useState<string>("");
   const { toast } = useToast();
+  const { isConnected, client } = useWallet();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isConnected) {
+      toast({ title: "Wallet Required", description: "Please connect your wallet first.", variant: "destructive" });
+      return;
+    }
 
     if (!description && !projectUrl) {
       toast({ title: "Error", description: "Please provide a project URL or description.", variant: "destructive" });
@@ -33,7 +40,7 @@ export function EvaluationForm({ onSuccess }: EvaluationFormProps) {
 
     try {
       setTxStatus("Waiting for consensus — AI evaluation in progress...");
-      const result = await submitEvaluation(projectUrl, description, whitepaperText);
+      const result = await submitEvaluation(client, projectUrl, description, whitepaperText);
       setTxStatus("");
       toast({ title: "Evaluation Complete", description: `Evaluation submitted successfully. ID: ${result}` });
       setProjectUrl("");
@@ -97,12 +104,14 @@ export function EvaluationForm({ onSuccess }: EvaluationFormProps) {
             </div>
           )}
 
-          <Button type="submit" disabled={isSubmitting} className="w-full">
+          <Button type="submit" disabled={isSubmitting || !isConnected} className="w-full">
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Processing...
               </>
+            ) : !isConnected ? (
+              "Connect wallet to submit"
             ) : (
               <>
                 <Send className="h-4 w-4" />

@@ -17,6 +17,10 @@ export function EvaluationHistory({ refreshKey }: EvaluationHistoryProps) {
   const [error, setError] = useState<string>("");
 
   const fetchEvaluations = async () => {
+    if (!import.meta.env.VITE_CONTRACT_ADDRESS) {
+      setError("No contract address configured. Set VITE_CONTRACT_ADDRESS in your .env file.");
+      return;
+    }
     setLoading(true);
     setError("");
     try {

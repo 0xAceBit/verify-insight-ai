@@ -1,11 +1,11 @@
 import { createClient } from "genlayer-js";
-import { simulator } from "genlayer-js/chains";
+import { studionet } from "genlayer-js/chains";
 
 const RPC_URL = import.meta.env.VITE_GENLAYER_RPC_URL || "https://studio.genlayer.com/api";
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || "";
 
 export const client = createClient({
-  chain: simulator,
+  chain: studionet,
   endpoint: RPC_URL,
 });
 
@@ -80,18 +80,15 @@ export async function submitEvaluation(
   description: string,
   whitepaperText: string
 ): Promise<string> {
-  const account = await client.getAccount();
-  if (!account) throw new Error("No wallet connected. Please connect MetaMask.");
-
   const hash = await client.writeContract({
-    account,
     address: contractAddress,
     functionName: "evaluate_project",
     args: [projectUrl, description, whitepaperText],
+    value: BigInt(0),
   });
 
   const receipt = await client.waitForTransactionReceipt({ hash });
-  return receipt.status === "success" ? String(receipt.data ?? hash) : hash;
+  return String(receipt?.data ?? hash);
 }
 
 export async function getEvaluation(evalId: number): Promise<EvaluationRecord | null> {

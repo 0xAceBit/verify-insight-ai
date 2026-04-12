@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { getAllEvaluations, type EvaluationRecord, getScoreColor } from "@/lib/genlayer";
 import { EvaluationResultCard } from "./EvaluationResult";
-import { Loader2, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { DEMO_EVALUATIONS } from "@/lib/demo-data";
+import { Loader2, RefreshCw, ChevronDown, ChevronUp, FlaskConical } from "lucide-react";
 
 interface EvaluationHistoryProps {
   refreshKey: number;
@@ -15,8 +17,14 @@ export function EvaluationHistory({ refreshKey }: EvaluationHistoryProps) {
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [error, setError] = useState<string>("");
+  const [demoMode, setDemoMode] = useState(!import.meta.env.VITE_CONTRACT_ADDRESS);
 
   const fetchEvaluations = async () => {
+    if (demoMode) {
+      setEvaluations(DEMO_EVALUATIONS);
+      setError("");
+      return;
+    }
     if (!import.meta.env.VITE_CONTRACT_ADDRESS) {
       setError("No contract address configured. Set VITE_CONTRACT_ADDRESS in your .env file.");
       return;

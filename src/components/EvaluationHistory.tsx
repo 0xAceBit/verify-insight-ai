@@ -44,15 +44,25 @@ export function EvaluationHistory({ refreshKey }: EvaluationHistoryProps) {
 
   useEffect(() => {
     fetchEvaluations();
-  }, [refreshKey]);
+  }, [refreshKey, demoMode]);
+
+  const toggleDemo = () => setDemoMode((d) => !d);
 
   return (
     <Card className="border-border/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-xl">Evaluation History</CardTitle>
-        <Button variant="ghost" size="icon" onClick={fetchEvaluations} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-        </Button>
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-xl">Evaluation History</CardTitle>
+          {demoMode && <Badge variant="secondary" className="text-xs"><FlaskConical className="h-3 w-3 mr-1" />Demo</Badge>}
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" onClick={toggleDemo} className="text-xs text-muted-foreground">
+            {demoMode ? "Live Mode" : "Demo Mode"}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={fetchEvaluations} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {loading && evaluations.length === 0 ? (

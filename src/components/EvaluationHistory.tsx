@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { getAllEvaluations, type EvaluationRecord, getScoreColor } from "@/lib/genlayer";
 import { EvaluationResultCard } from "./EvaluationResult";
-import { Loader2, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { DEMO_EVALUATIONS } from "@/lib/demo-data";
+import { Loader2, RefreshCw, ChevronDown, ChevronUp, FlaskConical } from "lucide-react";
 
 interface EvaluationHistoryProps {
   refreshKey: number;
@@ -15,8 +17,14 @@ export function EvaluationHistory({ refreshKey }: EvaluationHistoryProps) {
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [error, setError] = useState<string>("");
+  const [demoMode, setDemoMode] = useState(!import.meta.env.VITE_CONTRACT_ADDRESS);
 
   const fetchEvaluations = async () => {
+    if (demoMode) {
+      setEvaluations(DEMO_EVALUATIONS);
+      setError("");
+      return;
+    }
     if (!import.meta.env.VITE_CONTRACT_ADDRESS) {
       setError("No contract address configured. Set VITE_CONTRACT_ADDRESS in your .env file.");
       return;
@@ -36,15 +44,25 @@ export function EvaluationHistory({ refreshKey }: EvaluationHistoryProps) {
 
   useEffect(() => {
     fetchEvaluations();
-  }, [refreshKey]);
+  }, [refreshKey, demoMode]);
+
+  const toggleDemo = () => setDemoMode((d) => !d);
 
   return (
     <Card className="border-border/50">
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-xl">Evaluation History</CardTitle>
-        <Button variant="ghost" size="icon" onClick={fetchEvaluations} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-        </Button>
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-xl">Evaluation History</CardTitle>
+          {demoMode && <Badge variant="secondary" className="text-xs"><FlaskConical className="h-3 w-3 mr-1" />Demo</Badge>}
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" onClick={toggleDemo} className="text-xs text-muted-foreground">
+            {demoMode ? "Live Mode" : "Demo Mode"}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={fetchEvaluations} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {loading && evaluations.length === 0 ? (

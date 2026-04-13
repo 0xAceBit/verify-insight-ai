@@ -2,7 +2,7 @@ import { useState } from "react";
 import { EvaluationForm } from "@/components/EvaluationForm";
 import { EvaluationHistory } from "@/components/EvaluationHistory";
 import { ConnectWallet } from "@/components/ConnectWallet";
-import { WalletProvider } from "@/hooks/use-wallet";
+import { WalletProvider } from "@/lib/genlayer/WalletProvider";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Cpu, Globe } from "lucide-react";
 

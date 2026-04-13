@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getAllEvaluations, type EvaluationRecord, getScoreColor } from "@/lib/genlayer";
+import Web3Evaluator, { type EvaluationRecord, getScoreColor } from "@/lib/contracts/Web3Evaluator";
+import { getContractAddress } from "@/lib/genlayer/client";
 import { EvaluationResultCard } from "./EvaluationResult";
 import { DEMO_EVALUATIONS } from "@/lib/demo-data";
 import { Loader2, RefreshCw, ChevronDown, ChevronUp, FlaskConical } from "lucide-react";
@@ -17,7 +18,7 @@ export function EvaluationHistory({ refreshKey }: EvaluationHistoryProps) {
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [error, setError] = useState<string>("");
-  const [demoMode, setDemoMode] = useState(!import.meta.env.VITE_CONTRACT_ADDRESS);
+  const [demoMode, setDemoMode] = useState(!getContractAddress());
 
   const fetchEvaluations = async () => {
     if (demoMode) {
@@ -25,14 +26,16 @@ export function EvaluationHistory({ refreshKey }: EvaluationHistoryProps) {
       setError("");
       return;
     }
-    if (!import.meta.env.VITE_CONTRACT_ADDRESS) {
+    const addr = getContractAddress();
+    if (!addr) {
       setError("No contract address configured. Set VITE_CONTRACT_ADDRESS in your .env file.");
       return;
     }
     setLoading(true);
     setError("");
     try {
-      const data = await getAllEvaluations();
+      const readContract = new Web3Evaluator();
+      const data = await readContract.getAllEvaluations();
       setEvaluations(data.reverse());
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to fetch evaluations";
@@ -53,7 +56,12 @@ export function EvaluationHistory({ refreshKey }: EvaluationHistoryProps) {
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <div className="flex items-center gap-2">
           <CardTitle className="text-xl">Evaluation History</CardTitle>
-          {demoMode && <Badge variant="secondary" className="text-xs"><FlaskConical className="h-3 w-3 mr-1" />Demo</Badge>}
+          {demoMode && (
+            <Badge variant="secondary" className="text-xs">
+              <FlaskConical className="mr-1 h-3 w-3" />
+              Demo
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="sm" onClick={toggleDemo} className="text-xs text-muted-foreground">
@@ -72,7 +80,9 @@ export function EvaluationHistory({ refreshKey }: EvaluationHistoryProps) {
         ) : error ? (
           <p className="text-sm text-destructive text-center py-4">{error}</p>
         ) : evaluations.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">No evaluations yet. Submit your first project above.</p>
+          <p className="text-sm text-muted-foreground text-center py-8">
+            No evaluations yet. Submit your first project above.
+          </p>
         ) : (
           <div className="space-y-2">
             <Table>
@@ -107,7 +117,9 @@ export function EvaluationHistory({ refreshKey }: EvaluationHistoryProps) {
                         )}
                       </TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">
-                        {ev.submitter ? `${ev.submitter.slice(0, 6)}...${ev.submitter.slice(-4)}` : "—"}
+                        {ev.submitter
+                          ? `${ev.submitter.slice(0, 6)}...${ev.submitter.slice(-4)}`
+                          : "—"}
                       </TableCell>
                       <TableCell>
                         {expandedId === ev.id ? (

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import type { EvaluationResult } from "@/lib/genlayer";
+import type { EvaluationResult } from "@/lib/contracts/Web3Evaluator";
 import { Shield, TrendingUp, Users, Lightbulb, AlertTriangle } from "lucide-react";
 
 const CATEGORY_META: Record<string, { label: string; icon: React.ReactNode; max: number }> = {

@@ -3,54 +3,62 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Send } from "lucide-react";
-import { submitEvaluation } from "@/lib/genlayer";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useWallet } from "@/lib/genlayer/WalletProvider";
+import { useContract } from "@/hooks/use-contract";
 import { useToast } from "@/hooks/use-toast";
-import { useWallet } from "@/hooks/use-wallet";
+import { Loader2, Send } from "lucide-react";
 
 interface EvaluationFormProps {
   onSuccess: () => void;
 }
 
 export function EvaluationForm({ onSuccess }: EvaluationFormProps) {
+  const { isConnected, isOnCorrectNetwork } = useWallet();
+  const contract = useContract();
+  const { toast } = useToast();
+
   const [projectUrl, setProjectUrl] = useState("");
   const [description, setDescription] = useState("");
   const [whitepaperText, setWhitepaperText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [txStatus, setTxStatus] = useState<string>("");
-  const { toast } = useToast();
-  const { isConnected, client } = useWallet();
+  const [txStatus, setTxStatus] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isConnected) {
-      toast({ title: "Wallet Required", description: "Please connect your wallet first.", variant: "destructive" });
+      toast({ title: "Connect your wallet first", variant: "destructive" });
       return;
     }
 
-    if (!description && !projectUrl) {
-      toast({ title: "Error", description: "Please provide a project URL or description.", variant: "destructive" });
+    if (!isOnCorrectNetwork) {
+      toast({ title: "Please switch to the GenLayer network", variant: "destructive" });
+      return;
+    }
+
+    if (!projectUrl && !description) {
+      toast({ title: "Provide a project URL or description", variant: "destructive" });
       return;
     }
 
     setIsSubmitting(true);
-    setTxStatus("Submitting transaction...");
+    setTxStatus("Submitting transaction…");
 
     try {
-      setTxStatus("Waiting for consensus — AI evaluation in progress...");
-      const result = await submitEvaluation(client, projectUrl, description, whitepaperText);
-      setTxStatus("");
-      toast({ title: "Evaluation Complete", description: `Evaluation submitted successfully. ID: ${result}` });
+      setTxStatus("Waiting for AI evaluation & validator consensus…");
+      await contract.evaluateProject(projectUrl, description, whitepaperText);
+
+      toast({ title: "Evaluation complete!", description: "Results stored onchain." });
       setProjectUrl("");
       setDescription("");
       setWhitepaperText("");
+      setTxStatus("");
       onSuccess();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Transaction failed";
+      const msg = err instanceof Error ? err.message : "Transaction failed";
+      toast({ title: "Error", description: msg, variant: "destructive" });
       setTxStatus("");
-      toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -59,37 +67,38 @@ export function EvaluationForm({ onSuccess }: EvaluationFormProps) {
   return (
     <Card className="border-border/50">
       <CardHeader>
-        <CardTitle className="text-xl">Evaluate a Project</CardTitle>
-        <CardDescription>Submit a Web3 project for AI-powered on-chain evaluation</CardDescription>
+        <CardTitle className="text-xl">Submit Project for Evaluation</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="url">Project URL</Label>
+            <Label htmlFor="projectUrl">Project URL</Label>
             <Input
-              id="url"
-              placeholder="https://example-project.io"
+              id="projectUrl"
+              placeholder="https://example-project.com"
               value={projectUrl}
               onChange={(e) => setProjectUrl(e.target.value)}
               disabled={isSubmitting}
             />
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="description">Project Description *</Label>
+            <Label htmlFor="description">Project Description</Label>
             <Textarea
               id="description"
-              placeholder="Describe the project's purpose, technology, and token model..."
+              placeholder="Describe the Web3 project you want to evaluate…"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={isSubmitting}
-              rows={4}
+              rows={3}
             />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="whitepaper">Whitepaper Text (optional)</Label>
             <Textarea
               id="whitepaper"
-              placeholder="Paste relevant whitepaper excerpts..."
+              placeholder="Paste relevant whitepaper sections…"
               value={whitepaperText}
               onChange={(e) => setWhitepaperText(e.target.value)}
               disabled={isSubmitting}
@@ -98,23 +107,29 @@ export function EvaluationForm({ onSuccess }: EvaluationFormProps) {
           </div>
 
           {txStatus && (
-            <div className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <span className="text-muted-foreground">{txStatus}</span>
+            <div className="flex items-center gap-2 rounded-md border border-border bg-secondary/50 px-4 py-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {txStatus}
             </div>
           )}
 
-          <Button type="submit" disabled={isSubmitting || !isConnected} className="w-full">
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isSubmitting || !isConnected || !isOnCorrectNetwork}
+          >
             {isSubmitting ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Processing...
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing…
               </>
             ) : !isConnected ? (
               "Connect wallet to submit"
+            ) : !isOnCorrectNetwork ? (
+              "Switch to GenLayer network"
             ) : (
               <>
-                <Send className="h-4 w-4" />
+                <Send className="mr-2 h-4 w-4" />
                 Submit Evaluation
               </>
             )}

@@ -1,4 +1,4 @@
-import type { EvaluationRecord } from "./genlayer";
+import type { EvaluationRecord } from "./contracts/Web3Evaluator";
 
 export const DEMO_EVALUATIONS: EvaluationRecord[] = [
   {

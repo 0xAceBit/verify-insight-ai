@@ -1,4 +1,4 @@
-import { getScoreLabel } from "@/lib/genlayer";
+import { getScoreLabel } from "@/lib/contracts/Web3Evaluator";
 
 interface ScoreGaugeProps {
   score: number;

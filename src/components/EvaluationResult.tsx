@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScoreGauge } from "./ScoreGauge";
 import { CategoryBreakdown } from "./CategoryBreakdown";
-import type { EvaluationRecord } from "@/lib/genlayer";
+import type { EvaluationRecord } from "@/lib/contracts/Web3Evaluator";
 import { ExternalLink } from "lucide-react";
 
 interface EvaluationResultProps {
